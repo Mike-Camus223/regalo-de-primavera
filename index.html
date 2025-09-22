@@ -31,6 +31,38 @@
             animation: textAppear 3s ease-in-out 2s forwards;
         }
         
+
+
+        
+#playMusic {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 12px 25px;
+    font-size: 1.2em;
+    font-family: 'Georgia', serif;
+    color: #fff;
+    background: linear-gradient(135deg, #c5a41f, #d19111);
+    border: 2px solid #fff;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+#playMusic:hover {
+    transform: translateX(-50%) scale(1.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    background: linear-gradient(135deg, #ffff64, #ffcc33);
+}
+
+#playMusic:active {
+    transform: translateX(-50%) scale(0.95);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
         @keyframes textAppear {
             0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
             100% { opacity: 1; transform: translateX(-50%) translateY(0px); }
@@ -45,7 +77,14 @@
     </style>
 </head>
 <body>
-<audio id="music" src="./public/nostalgic.mp3" autoplay loop></audio>
+    <button id="playMusic">
+    Apretame uwu
+</button>
+
+
+    <audio id="music" src="./public/nostalgic.mp3" loop></audio>
+
+
     <div id="text-container">
         El comienzo de la primera llegó y no me olvidé<br>
         de tus flores amarillas UwU,<br>
@@ -57,15 +96,16 @@
         const ctx = canvas.getContext('2d');
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
-        
+         const audio = document.getElementById('music');
+        const playButton = document.getElementById('playMusic');
         let animationTime = 0;
 
-        window.addEventListener('load', () => {
-    const audio = document.getElementById('music');
-    audio.play().catch(() => {
-      console.log('Autoplay bloqueado, el usuario debe interactuar con la página.');
-    });
-  });
+        
+        playButton.addEventListener('click', () => {
+            audio.play().catch(() => console.log('No se pudo reproducir el audio'));
+            playButton.style.display = 'none'; // Oculta el botón después de reproducir
+        });
+    
 
         // Luciérnagas
         const fireflies = [];
