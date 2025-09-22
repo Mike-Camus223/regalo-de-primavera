@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flores y Luciérnagas</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #0b0c1a; /* fondo oscuro */
+        }
+        canvas {
+            display: block;
+        }
+        #text-container {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffff64;
+            font-family: 'Georgia', serif;
+            font-size: 2em;
+            text-align: center;
+            padding-bottom: 5rem;
+            text-shadow: 0 0 20px rgba(255, 255, 100, 0.8);
+            z-index: 10;
+            opacity: 0;
+            animation: textAppear 3s ease-in-out 2s forwards;
+        }
+        
+        @keyframes textAppear {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0px); }
+        }
+        
+        @media (max-width: 768px) {
+            #text-container {
+                font-size: 1.3em;
+                top: 15%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <audio src="./nostalgic.mp3" autoplay></audio>
+    <div id="text-container">
+        El comienzo de la primera llegó y no me olvidé<br>
+        de tus flores amarillas UwU,<br>
+        toma dormilona bella! 💛
+    </div>
+    <canvas id="scene"></canvas>
+    <script>
+        const canvas = document.getElementById('scene');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        let animationTime = 0;
+
+        window.addEventListener('load', () => {
+    const audio = document.getElementById('music');
+    audio.play().catch(() => {
+      console.log('Autoplay bloqueado, el usuario debe interactuar con la página.');
+    });
+  });
+
+        // Luciérnagas
+        const fireflies = [];
+        for (let i = 0; i < 50; i++) {
+            fireflies.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 2 + 1,
+                dx: (Math.random() - 0.5) * 0.5,
+                dy: (Math.random() - 0.5) * 0.5,
+                alpha: Math.random(),
+                dAlpha: Math.random() * 0.02,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Flores pequeñas
+        const flowers = [];
+        for (let i = 0; i < 20; i++) {
+            flowers.push({
+                x: Math.random() * width,
+                y: height - Math.random() * 100,
+                petals: Math.floor(Math.random() * 5) + 5,
+                size: Math.random() * 10 + 10,
+                sway: Math.random() * 0.02,
+                swayPhase: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Gatitos (solo cabecitas)
+        const cats = {
+            black: {
+                x: width * 0.30,
+                y: height - 220,
+                size: 70,
+                earTwitch: 0
+            },
+            white: {
+                x: width * 0.70,
+                y: height - 220,
+                size: 70,
+                earTwitch: Math.PI / 2
+            }
+        };
+
+        // Flor gigante central
+        const giantFlower = {
+            x: width / 2,
+            y: height / 2,
+            petals: 12,
+            size: 0,
+            maxSize: 120,
+            growth: 0,
+            pulsePhase: 0
+        };
+
+        function drawFlower(flower) {
+            ctx.save();
+            ctx.translate(flower.x, flower.y + Math.sin(animationTime * flower.sway + flower.swayPhase) * 3);
+            for (let i = 0; i < flower.petals; i++) {
+                ctx.rotate((Math.PI * 2) / flower.petals);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(flower.size/2, -flower.size/2, 0, -flower.size);
+                ctx.quadraticCurveTo(-flower.size/2, -flower.size/2, 0, 0);
+                ctx.fillStyle = '#ffff64';
+                ctx.fill();
+                ctx.strokeStyle = '#ffcc00';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            // Centro de la flor
+            ctx.beginPath();
+            ctx.arc(0, 0, flower.size/4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff8800';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawCat(cat, isBlack) {
+            const size = cat.size;
+            ctx.save();
+            ctx.translate(cat.x, cat.y);
+            
+            // Cabeza redonda grande
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+            ctx.fillStyle = isBlack ? '#1a1a1a' : '#f0f0f0';
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Orejas puntiagudas con movimiento sutil
+            const earTwitch = Math.sin(animationTime * 0.02 + cat.earTwitch) * 0.08;
+            
+            // Oreja izquierda puntiaguda
+            ctx.save();
+            ctx.rotate(earTwitch);
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.7, -size * 0.4);
+            ctx.lineTo(-size * 0.5, -size * 1.1);
+            ctx.lineTo(-size * 0.3, -size * 0.5);
+            ctx.closePath();
+            ctx.fillStyle = isBlack ? '#1a1a1a' : '#f0f0f0';
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Interior oreja izquierda (rosa)
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.6, -size * 0.58);
+            ctx.lineTo(-size * 0.5, -size * 1);
+            ctx.lineTo(-size * 0.4, -size * 0.62);
+            ctx.closePath();
+            ctx.fillStyle = '#ffb6c1';
+            ctx.fill();
+            ctx.restore();
+            
+            // Oreja derecha puntiaguda
+            ctx.save();
+            ctx.rotate(-earTwitch);
+            ctx.beginPath();
+            ctx.moveTo(size * 0.7, -size * 0.4);
+            ctx.lineTo(size * 0.5, -size * 1.1);
+            ctx.lineTo(size * 0.3, -size * 0.5);
+            ctx.closePath();
+            ctx.fillStyle = isBlack ? '#1a1a1a' : '#f0f0f0';
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Interior oreja derecha (rosa)
+            ctx.beginPath();
+            ctx.moveTo(size * 0.6, -size * 0.58);
+            ctx.lineTo(size * 0.5, -size * 1);
+            ctx.lineTo(size * 0.4, -size * 0.62);
+            ctx.closePath();
+            ctx.fillStyle = '#ffb6c1';
+            ctx.fill();
+            ctx.restore();
+            
+            if (isBlack) {
+                // Gatito negro - manchita blanca en la perilla
+                ctx.beginPath();
+                ctx.ellipse(0, size * 0.3, size * 0.25, size * 0.35, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Ojos amarillos grandes y expresivos
+                ctx.beginPath();
+                ctx.ellipse(-size * 0.3, -size * 0.15, size * 0.2, size * 0.25, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffff00';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.ellipse(size * 0.3, -size * 0.15, size * 0.2, size * 0.25, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffff00';
+                ctx.fill();
+                ctx.stroke();
+                
+                // Pupilas verticales
+                ctx.beginPath();
+                ctx.ellipse(-size * 0.3, -size * 0.15, size * 0.05, size * 0.15, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.ellipse(size * 0.3, -size * 0.15, size * 0.05, size * 0.15, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                
+                // Brillos en los ojos
+                ctx.beginPath();
+                ctx.arc(-size * 0.26, -size * 0.25, size * 0.04, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(size * 0.34, -size * 0.25, size * 0.04, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                
+                // Nariz rosa
+                ctx.beginPath();
+                ctx.moveTo(0, size * 0.05);
+                ctx.lineTo(-size * 0.06, size * 0.12);
+                ctx.lineTo(size * 0.06, size * 0.12);
+                ctx.closePath();
+                ctx.fillStyle = '#ffb6c1';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+            } else {
+                // Gatito blanco - mancha negra en el ojo derecho
+                ctx.beginPath();
+                ctx.arc(size * 0.2, -size * 0.05, size * 0.22, 0, Math.PI * 2);
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fill();
+                
+                // Mancha negra en la nariz
+                ctx.beginPath();
+                ctx.ellipse(0, size * 0.08, size * 0.15, size * 0.12, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fill();
+                
+                // Ojo izquierdo - verde lima
+                ctx.beginPath();
+                ctx.ellipse(-size * 0.3, -size * 0.15, size * 0.2, size * 0.25, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#BBCA27';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Ojo derecho - azul celeste
+                ctx.beginPath();
+                ctx.ellipse(size * 0.3, -size * 0.15, size * 0.2, size * 0.25, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#87ceeb';
+                ctx.fill();
+                ctx.stroke();
+                
+                // Pupilas verticales
+                ctx.beginPath();
+                ctx.ellipse(-size * 0.3, -size * 0.15, size * 0.05, size * 0.15, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.ellipse(size * 0.3, -size * 0.15, size * 0.05, size * 0.15, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                
+                // Brillos en los ojos
+                ctx.beginPath();
+                ctx.arc(-size * 0.26, -size * 0.25, size * 0.04, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(size * 0.34, -size * 0.25, size * 0.04, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                
+                // Nariz rosa (parte visible)
+                ctx.beginPath();
+                ctx.moveTo(0, size * 0.05);
+                ctx.lineTo(-size * 0.06, size * 0.12);
+                ctx.lineTo(size * 0.06, size * 0.12);
+                ctx.closePath();
+                ctx.fillStyle = '#ffb6c1';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Boca sonriente
+            ctx.beginPath();
+            ctx.arc(0, size * 0.2, size * 0.1, 0, Math.PI, false);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            // Línea del medio de la boca
+            ctx.beginPath();
+            ctx.moveTo(0, size * 0.05);
+            ctx.lineTo(0, size * 0.25);
+            ctx.stroke();
+            
+            // Bigotes más largos
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.9, -size * 0.05);
+            ctx.lineTo(-size * 0.5, 0);
+            ctx.moveTo(-size * 0.9, size * 0.1);
+            ctx.lineTo(-size * 0.5, size * 0.1);
+            ctx.moveTo(-size * 0.85, size * 0.25);
+            ctx.lineTo(-size * 0.5, size * 0.2);
+            
+            ctx.moveTo(size * 0.9, -size * 0.05);
+            ctx.lineTo(size * 0.5, 0);
+            ctx.moveTo(size * 0.9, size * 0.1);
+            ctx.lineTo(size * 0.5, size * 0.1);
+            ctx.moveTo(size * 0.85, size * 0.25);
+            ctx.lineTo(size * 0.5, size * 0.2);
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function drawGiantFlower() {
+            if (giantFlower.growth < 1) {
+                giantFlower.growth += 0.008; // Crecimiento gradual
+            }
+            
+            const currentSize = giantFlower.maxSize * giantFlower.growth;
+            const pulse = 1 + Math.sin(giantFlower.pulsePhase) * 0.1;
+            
+            ctx.save();
+            ctx.translate(giantFlower.x, giantFlower.y);
+            ctx.scale(pulse, pulse);
+            
+            // Pétalos con gradiente
+            for (let i = 0; i < giantFlower.petals; i++) {
+                ctx.save();
+                ctx.rotate((Math.PI * 2 * i) / giantFlower.petals);
+                
+                // Crear gradiente para cada pétalo
+                const gradient = ctx.createRadialGradient(0, -currentSize/2, 0, 0, -currentSize/2, currentSize);
+                gradient.addColorStop(0, '#ffff88');
+                gradient.addColorStop(0.5, '#ffff44');
+                gradient.addColorStop(1, '#ffcc00');
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(currentSize/2, -currentSize/2, 0, -currentSize);
+                ctx.quadraticCurveTo(-currentSize/2, -currentSize/2, 0, 0);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Borde brillante
+                ctx.strokeStyle = '#ffff88';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+            
+            // Centro brillante de la flor gigante
+            const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, currentSize/3);
+            centerGradient.addColorStop(0, '#ffaa00');
+            centerGradient.addColorStop(0.5, '#ff8800');
+            centerGradient.addColorStop(1, '#ff6600');
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, currentSize/3, 0, Math.PI * 2);
+            ctx.fillStyle = centerGradient;
+            ctx.fill();
+            
+            // Detalles del centro
+            ctx.beginPath();
+            ctx.arc(0, 0, currentSize/5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff4400';
+            ctx.fill();
+            
+            ctx.restore();
+            
+            giantFlower.pulsePhase += 0.03;
+        }
+
+        function drawFirefly(f) {
+            // Movimiento más orgánico
+            f.x += f.dx + Math.sin(animationTime * 0.01 + f.phase) * 0.1;
+            f.y += f.dy + Math.cos(animationTime * 0.01 + f.phase) * 0.1;
+            
+            const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * 3);
+            gradient.addColorStop(0, `rgba(255,255,100,${f.alpha})`);
+            gradient.addColorStop(1, `rgba(255,255,100,0)`);
+            
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.radius * 3, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,150,${f.alpha})`;
+            ctx.fill();
+        }
+
+        function animate() {
+            animationTime++;
+            ctx.clearRect(0, 0, width, height);
+            
+            // Dibujar flores pequeñas
+            flowers.forEach(drawFlower);
+            
+            // Dibujar flor gigante
+            drawGiantFlower();
+            
+            // Dibujar gatitos
+            drawCat(cats.black, true);
+            drawCat(cats.white, false);
+            
+            // Dibujar luciérnagas
+            fireflies.forEach(f => {
+                drawFirefly(f);
+                
+                f.alpha += f.dAlpha;
+                if (f.alpha > 1 || f.alpha < 0.3) f.dAlpha *= -1;
+                
+                // Rebote en bordes
+                if (f.x > width) f.x = 0;
+                if (f.x < 0) f.x = width;
+                if (f.y > height) f.y = 0;
+                if (f.y < 0) f.y = height;
+            });
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Responsivo
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            giantFlower.x = width / 2;
+            giantFlower.y = height / 2;
+            cats.black.x = width * 0.35;
+            cats.white.x = width * 0.65;
+            cats.black.y = height - 100;
+            cats.white.y = height - 100;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
