@@ -17,16 +17,16 @@
         }
         #text-container {
             position: absolute;
-            top: 20%;
+            top: 10%;
             left: 50%;
             transform: translateX(-50%);
             color: #ffff64;
             font-family: 'Georgia', serif;
-            font-size: 2em;
+    font-size: clamp(1em, 5vw, 2em); /* escala de 1em a 2em según ancho de pantalla */
             text-align: center;
             padding-bottom: 5rem;
             text-shadow: 0 0 20px rgba(255, 255, 100, 0.8);
-            z-index: 10;
+            z-index: 40;
             opacity: 0;
             animation: textAppear 3s ease-in-out 2s forwards;
         }
@@ -69,11 +69,11 @@
         }
         
         @media (max-width: 768px) {
-            #text-container {
-                font-size: 1.3em;
-                top: 15%;
-            }
-        }
+    #text-container {
+        top: 8%;
+        font-size: clamp(1em, 6vw, 1.3em);
+    }
+}
     </style>
 </head>
 <body>
@@ -522,16 +522,31 @@
         }
 
         // Responsivo
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            giantFlower.x = width / 2;
-            giantFlower.y = height / 2;
-            cats.black.x = width * 0.35;
-            cats.white.x = width * 0.65;
-            cats.black.y = height - 100;
-            cats.white.y = height - 100;
-        });
+        // Resize canvas y elementos
+window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    // Flor gigante
+    giantFlower.x = width / 2;
+    giantFlower.y = height / 2;
+    giantFlower.maxSize = Math.min(120, width * 0.3);
+
+    // Gatos
+    cats.black.x = width * 0.35;
+    cats.white.x = width * 0.65;
+    cats.black.y = cats.white.y = height * 0.75;
+    cats.black.size = cats.white.size = Math.min(70, width * 0.2);
+
+    // Flores pequeñas
+    flowers.forEach(f => f.size = Math.random() * (width < 500 ? 5 : 10) + (width < 500 ? 5 : 10));
+
+    // Luciérnagas
+    fireflies.forEach(f => {
+        if(width < 500) f.radius = Math.random() * 1.5 + 0.5;
+    });
+});
+
 
         animate();
     </script>
